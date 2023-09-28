@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cncf-meetup
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hello-vienna
+  name: hello-vienna
+  namespace: cncf-meetup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-vienna
+  template:
+    metadata:
+      labels:
+        app: hello-vienna
+    spec:
+      containers:
+      - image: harbor.apps.tapmc.v2steve.net/demosteveschmidt/hello-vienna@sha256:51bf4acf169fe854f8ad19f9346469a9729ddb472b6e067d8ec778435ec5b66f
+        name: hello-vienna
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+          runAsNonRoot: true
+          seccompProfile:
+            type: "RuntimeDefault"
+# allowPrivilegeEscalation != false (container "hello-vienna" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "hello-vienna" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "hello-vienna" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "hello-vienna" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hello-vienna
+  name: hello-vienna
+  namespace: cncf-meetup
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: hello-vienna
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-vienna
+  namespace: cncf-meetup
+spec:
+  ingressClassName: contour
+  rules:
+  - host: hello-vienna.apps.tapmc.v2steve.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hello-vienna
+            port:
+              number: 8080

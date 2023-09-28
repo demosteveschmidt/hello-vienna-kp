@@ -1,0 +1,19 @@
+apiVersion: kpack.io/v1alpha2
+kind: Builder
+metadata:
+  name: ws-builder
+  namespace: dev-steve
+spec:
+  serviceAccountName: harbor-service-account
+  tag: harbor.apps.tapmc.v2steve.net/library/ws-builder
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+  - group:
+    - id: paketo-buildpacks/java
+  - group:
+    - id: paketo-buildpacks/nodejs
